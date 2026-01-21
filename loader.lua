@@ -3,98 +3,77 @@ repeat wait() until game:IsLoaded()
 local Players = game:GetService("Players")
 local CoreGui = game:GetService("CoreGui")
 local StarterGui = game:GetService("StarterGui")
+local HttpService = game:GetService("HttpService")
 
--- Nettoyer les GUI existants
-for _, gui in pairs(CoreGui:GetChildren()) do
-    if gui.Name:match("System") or gui.Name:match("Auth") then
-        pcall(function() gui:Destroy() end)
-    end
-end
-
--- Définir des variables globales pour bypasser les vérifications
-getgenv().keyless = true
-getgenv().authenticated = true
-getgenv().key_valid = true
-
--- URLs à essayer dans l'ordre
-local LoaderURLs = {
-    "https://raw.githubusercontent.com/hmm46569-wq/DVVVVSCRIPT/refs/heads/main/loader.lua",
-    "https://raw.githubusercontent.com/hmm46569-wq/DVVVVSCRIPT/main/loader.lua",
-}
-
-local function Notify(text, duration)
-    StarterGui:SetCore("SendNotification", {
-        Title = "Solix Hub",
-        Text = text,
-        Icon = "rbxassetid://102391696721436",
-        Duration = duration or 5
-    })
-end
-
-Notify("Initializing...", 2)
-
--- Fonction pour nettoyer le code source des vérifications
-local function CleanScript(source)
-    if not source or type(source) ~= "string" then
-        return source
-    end
-    
-    -- Remplacer les vérifications communes
-    source = source:gsub('keyless%s*=%s*false', 'keyless = true')
-    source = source:gsub('if%s+not%s+game_cfg%.keyless.-then', 'if false then')
-    source = source:gsub('Players%.LocalPlayer:Kick', '-- Players.LocalPlayer:Kick')
-    
-    return source
-end
-
--- Essayer de charger depuis les différentes URLs
-local loaded = false
-for i, url in ipairs(LoaderURLs) do
-    if loaded then break end
-    
-    Notify("Trying method " .. i .. "...", 2)
-    
-    local success, result = pcall(function()
-        local source = game:HttpGet(url)
-        source = CleanScript(source)
-        return loadstring(source)
-    end)
-    
-    if success and result then
-        local execSuccess, execError = pcall(result)
-        if execSuccess then
-            loaded = true
-            Notify("Script loaded successfully!", 5)
-            break
-        else
-            warn("Execution error:", execError)
-        end
-    else
-        warn("Loading error for URL " .. i .. ":", result)
-    end
-    
-    wait(0.5)
-end
-
-if not loaded then
-    Notify("All loading methods failed. Check console for details.", 10)
-    warn("Could not load script from any source")
-end
-
--- Protection continue contre les popups d'auth
-task.spawn(function()
-    while true do
-        wait(0.5)
-        for _, gui in pairs(CoreGui:GetChildren()) do
-            if gui.Name:match("System") or gui.Name:match("Auth") or gui.Name:match("Luarmor") then
-                pcall(function() gui:Destroy() end)
-            end
-        end
-        
-        for _, gui in pairs(Players.LocalPlayer.PlayerGui:GetChildren()) do
-            if gui.Name:match("System") or gui.Name:match("Auth") or gui.Name:match("Luarmor") then
-                pcall(function() gui:Destroy() end)
-            end
-        end
+-- Supprimer les GUI de vérification
+pcall(function()
+    if CoreGui:FindFirstChild("System") then
+        CoreGui.System:Destroy()
     end
 end)
+
+-- Liste des scripts par jeu
+local Scripts = {
+    ["3808223175"] = "https://raw.githubusercontent.com/YOUR_REPO/jujutsu-infinite.lua", -- Jujutsu Infinite
+    ["994732206"] = "https://raw.githubusercontent.com/YOUR_REPO/blox-fruits.lua", -- Blox Fruits
+    ["1650291138"] = "https://raw.githubusercontent.com/YOUR_REPO/demon-fall.lua", -- Demon Fall
+    ["5750914919"] = "https://raw.githubusercontent.com/YOUR_REPO/fisch.lua", -- Fisch
+    ["3317771874"] = "https://raw.githubusercontent.com/YOUR_REPO/pet-sim-99.lua", -- Pet Simulator 99
+    ["1511883870"] = "https://raw.githubusercontent.com/YOUR_REPO/shindo-life.lua", -- Shindo Life
+    ["6035872082"] = "https://raw.githubusercontent.com/YOUR_REPO/rivals.lua", -- Rivals
+    ["245662005"] = "https://raw.githubusercontent.com/YOUR_REPO/jailbreak.lua", -- Jailbreak
+    ["7018190066"] = "https://raw.githubusercontent.com/YOUR_REPO/dead-rails.lua", -- Dead Rails
+    ["7074860883"] = "https://raw.githubusercontent.com/YOUR_REPO/arise-crossover.lua", -- Arise Crossover
+    ["7436755782"] = "https://raw.githubusercontent.com/YOUR_REPO/grow-garden.lua", -- Grow a Garden
+    ["7326934954"] = "https://raw.githubusercontent.com/YOUR_REPO/99-nights.lua", -- 99 Nights in the Forest
+    ["8316902627"] = "https://raw.githubusercontent.com/YOUR_REPO/plants-brainrot.lua", -- Plants vs Brainrot
+    ["8321616508"] = "https://raw.githubusercontent.com/YOUR_REPO/rogue-piece.lua", -- Rogue Piece
+    ["3457700596"] = "https://raw.githubusercontent.com/YOUR_REPO/fruit-battlegrounds.lua", -- Fruit Battlegrounds
+    ["7671049560"] = "https://raw.githubusercontent.com/YOUR_REPO/the-forge.lua", -- The Forge
+    ["6760085372"] = "https://raw.githubusercontent.com/YOUR_REPO/jujutsu-zero.lua", -- Jujutsu: Zero
+    ["9266873836"] = "https://raw.githubusercontent.com/YOUR_REPO/anime-fighting.lua", -- Anime Fighting Simulator
+    ["9363735110"] = "https://raw.githubusercontent.com/YOUR_REPO/escape-tsunami.lua", -- Escape Tsunami
+}
+
+local GameId = tostring(game.GameId)
+
+-- Vérifier si le jeu est supporté
+if not Scripts[GameId] then
+    StarterGui:SetCore("SendNotification", {
+        Title = "Solix Hub",
+        Text = "Game not supported!",
+        Duration = 5
+    })
+    return
+end
+
+-- Notification de chargement
+StarterGui:SetCore("SendNotification", {
+    Title = "Solix Hub",
+    Text = "Loading script...",
+    Icon = "rbxassetid://102391696721436",
+    Duration = 3
+})
+
+-- Charger le script du jeu
+local success, err = pcall(function()
+    local scriptUrl = Scripts[GameId]
+    local scriptContent = game:HttpGet(scriptUrl)
+    loadstring(scriptContent)()
+end)
+
+if success then
+    StarterGui:SetCore("SendNotification", {
+        Title = "Solix Hub",
+        Text = "Script loaded successfully!",
+        Icon = "rbxassetid://102391696721436",
+        Duration = 5
+    })
+else
+    StarterGui:SetCore("SendNotification", {
+        Title = "Solix Hub",
+        Text = "Failed to load: " .. tostring(err),
+        Duration = 7
+    })
+    warn("Error:", err)
+end
