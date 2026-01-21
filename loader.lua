@@ -83,31 +83,6 @@ function Task()
 				api.load_script()
 			end)
 			return -- DO NOT LOAD KEY SYSTEM
-		end
-
-		local Task = {}
-		local v1 = {}
-		local variables = {}
-
-		local error_messages = {
-			KEY_EXPIRED = "Your key has expired\nPlease renew it to continue.",
-			KEY_BANNED = "This key has been blacklisted.\nContact support for assistance.",
-			KEY_HWID_LOCKED = "This key is linked to a different HWID.\nPlease reset it via our bot.",
-			KEY_INCORRECT = "The provided key is incorrect or no longer valid.",
-			KEY_INVALID = "Invalid key format.\nPlease check your key and try again.",
-			SCRIPT_ID_INCORRECT = "The provided script ID does not exist or has been removed.",
-			SCRIPT_ID_INVALID = "This script has been deleted by its owner.",
-			INVALID_EXECUTOR = "Invalid HWID header detected.\nYour executor may not be supported.",
-			SECURITY_ERROR = "Security validation failed (Cloudflare check).\nPlease retry.",
-			TIME_ERROR = "Invalid client time detected.\nPlease sync your system clock.",
-			UNKNOWN_ERROR = "An unknown error occurred.\nPlease contact support."
-		}
-		-------------------------------------------------------------------------------
-		v1.__index = v1
-		local v_u_3 = buffer and buffer.tostring or function(b) return tostring(b) end
-		local v_u_4 = buffer and buffer.fromstring or function(s) return s end
-		function v1.revert(p6) return v_u_4(p6) end
-		function v1.convert(p51) return v_u_3(p51) end
 		-------------------------------------------------------------------------------
 		local LSMT = game:GetObjects("rbxassetid://126113170246030")[1]
 
@@ -273,8 +248,6 @@ function Task()
 		pcall(function()
 			LuarmorGot_System:Destroy()
 		end)
-
-		getgenv().LuarmorGot_System = LSMT
 		-------------------------------------------------------------------------------
 		local function RandomName(b)
 			local c = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()-_=+[{]}\\|'\";:,<.>/? "
@@ -332,31 +305,6 @@ function Task()
 				return
 			end
 
-			local cleaned_key = v1.convert(key):gsub("%s", "")
-
-			if not string.match(cleaned_key, "^[A-Za-z]+$") or #cleaned_key ~= 32 then
-				DeleteFile("solixhub/savedkey.txt")
-				wait(1)
-				Players.LocalPlayer:Kick("Invalid key format.\nPlease make sure you are using a valid key.")
-				return nil
-			end
-
-			if cleaned_key ~= v1.convert(key) then
-				Notification("Info", "Extra spaces detected in the key. Verifying without spaces...")
-			end
-
-			local success, status = pcall(api.check_key, cleaned_key)
-			if not success then
-				Notification("Error", "An unexpected error occurred while verifying the key.")
-				return nil
-			end
-
-			if status.code == "KEY_VALID" then
-
-				if CoreGui:FindFirstChild("System") then
-					CoreGui.System:Destroy()
-				end
-
 				if not (
 					game_id == "3808223175" -- Jujutsu Infinite
 						or game_id == "994732206" -- Blox Fruits
@@ -371,45 +319,6 @@ function Task()
 					Players.LocalPlayer:Kick("This executor is not supported for this game.")
 				end
 
-				if not isfile(file_directory) then
-					local save_success, err = pcall(writefile, file_directory, cleaned_key)
-					if not save_success then
-						Notification("Error", "Failed to save key:\n" .. err)
-					end
-				else
-					local current_key = readfile(file_directory)
-					if current_key ~= cleaned_key then
-						local success, err = pcall(writefile, file_directory, cleaned_key)
-						if not success then
-							Notification("Error", "Failed to update key:\n" .. err)
-						end
-					end
-				end
-
-				script_key = cleaned_key
-
-				Notification("Info", string.format("Key will expire in: %s", ToTime(status.data.auth_expire - os.time())))
-				pcall(function() api.load_script() end)
-				return true
-			end
-
-			if error_messages[status.code] then
-				DeleteFile(file_directory)
-				Notification("Warning", error_messages[status.code])
-
-				if status.code == "KEY_HWID_LOCKED" then
-					Players.LocalPlayer:Kick(error_messages[status.code])
-				end
-
-				if status.code == "INVALID_EXECUTOR" or status.code == "SECURITY_ERROR" or status.code == "UNKNOWN_ERROR" then
-					Players.LocalPlayer:Kick(error_messages[status.code])
-				end
-
-				return nil
-			end
-
-			Players.LocalPlayer:Kick("Key check failed:\nCode: " .. status.code)
-		end
 		-------------------------------------------------------------------------------
 		local Main = LSMT.Main
 		local DragBar = Main.Movebar
@@ -503,56 +412,6 @@ function Task()
 				Notification("Success", "Link copied to clipboard!")
 			end)
 
-			spawn(function()
-				local ok, err = pcall(function()
-					local key = (isfile(config.File) and readfile(config.File)) or (script_key ~= "" and script_key) or nil
-					if not key then
-						LSMT.Enabled = true
-						return
-					end
-
-					local decoded
-					local success_decode, decode_error = pcall(function()
-						decoded = v1.revert(key)
-					end)
-					if not success_decode or not decoded then
-						Notification("Warning", "Failed to decode key:\n" .. (decode_error or "Unknown error"))
-						LSMT.Enabled = true
-						return
-					end
-
-					local is_valid, valid_result = pcall(function()
-						return variables[jas](decoded, config.File)
-					end)
-
-					if decoded ~= nil and (not is_valid or valid_result ~= true) then
-						Notification("Warning", "Invalid or rejected key.")
-						LSMT.Enabled = true
-						return
-					end
-					pcall(function() if LSMT then LSMT:Destroy() end end)
-				end)
-
-				if not ok then
-					Notification("Warning", "Key system error:\n" .. tostring(err))
-					if LSMT then
-						LSMT.Enabled = true
-					end
-				end
-			end)
-
-			RenameAllChildren(LSMT)
-			DraggFunction(Main, DragBar, true, 0)
-			return Window
-		end
-		return Task
-	end)
-	if not status then
-		Notification("Warning", "Key system failed to load:\n" .. res1)
-	else
-		return res1, res2
-	end
-end
 
 local Task = Task()
 
